@@ -8,5 +8,6 @@ import (
 
 func main() {
 	starter := proxy.NewStarter("build/dummy")
-	log.Fatal(proxy.NewProxy(4000, starter).Poll())
+	pool := proxy.NewServerPool(starter, 3)
+	log.Fatal(proxy.NewProxy(4000, pool).Poll())
 }

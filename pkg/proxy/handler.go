@@ -1,10 +1,8 @@
 package proxy
 
 import (
-	"context"
 	"log"
 	"net"
-	"time"
 )
 
 func readConnection(conn net.Conn) ([]byte, error) {
@@ -36,18 +34,12 @@ func communicationRound(clientConn, serverConn net.Conn) error {
 
 func (p *proxy) HandleConnection(clientConn net.Conn) {
 	defer clientConn.Close()
-	ctx, cancel := context.WithTimeout(
-		context.Background(),
-		10*time.Second,
-	)
-	defer cancel()
-	serverConn, serverStop, err := p.starter.StartServer(ctx)
+	serverConn, err := p.serverPool.ProvideConnection()
 	if err != nil {
 		log.Print(err)
+		return
 	}
 	defer serverConn.Close()
-	defer serverStop()
-
 	if err := communicationRound(clientConn, serverConn); err != nil {
 		log.Print(err)
 	}

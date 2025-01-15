@@ -1,9 +1,11 @@
 package proxy
 
 import (
+	"context"
 	"fmt"
 	"log"
 	"net"
+	"time"
 )
 
 type Proxy interface {
@@ -12,14 +14,14 @@ type Proxy interface {
 }
 
 type proxy struct {
-	port    int
-	starter Starter
+	port       int
+	serverPool ServerPool
 }
 
-func NewProxy(port int, starter Starter) Proxy {
+func NewProxy(port int, serverPool ServerPool) Proxy {
 	return &proxy{
 		port,
-		starter,
+		serverPool,
 	}
 }
 func (p *proxy) Poll() error {
@@ -28,6 +30,11 @@ func (p *proxy) Poll() error {
 	if err != nil {
 		return err
 	}
+	go func() {
+		for range time.NewTicker(time.Second).C {
+			p.serverPool.Refresh(context.Background())
+		}
+	}()
 	for {
 		conn, err := listener.Accept()
 		if err != nil {
